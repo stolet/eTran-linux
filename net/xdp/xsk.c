@@ -760,10 +760,16 @@ again:
                     pool->xdp_egress_fwd = 1;
                 desc->options |= (ret == XDP_EGRESS_TX ? 0 : XDP_EGRESS_SKIP);
             } else if (unlikely(ret == XDP_EGRESS_DROP)) {
-                /* add dropped frames to comp ring directly */
-                xsk_ooo_cq(pool->cq, desc->addr);
-                /* xsk_tx_release() should call xsk_tx_completed() to process this */
-                pool->xdp_egress_drop_cnt++;
+                if (desc->options & XDP_EGRESS_NO_COMP)
+                {
+                    xskq_prod_cancel_n(pool->cq, 1);
+                }
+                else
+                {
+                    /* Complete only frames whose ownership was transferred. */
+                    xsk_ooo_cq(pool->cq, desc->addr);
+                    pool->xdp_egress_drop_cnt++;
+                }
                 desc->options |= XDP_EGRESS_SKIP;
             } else {
                 pr_warn("BUG in XDP_EGRESS: %u\n", ret);

@@ -65,8 +65,6 @@ bool mlx5e_xsk_tx(struct mlx5e_xdpsq *sq, unsigned int budget)
 	bool work_done = true;
 	bool flush = false;
 
-	xdpi.mode = pool->xdp_egress_prog ? MLX5E_XDP_XMIT_MODE_XSK_OOO_COMP : MLX5E_XDP_XMIT_MODE_XSK;
-
 	for (; budget; budget--) {
 		int check_result = INDIRECT_CALL_2(sq->xmit_xdp_frame_check,
 						   mlx5e_xmit_xdp_frame_check_mpwqe,
@@ -94,6 +92,8 @@ bool mlx5e_xsk_tx(struct mlx5e_xdpsq *sq, unsigned int budget)
             flush = true;
             continue;
         }
+
+	xdpi.mode = pool->xdp_egress_prog ? MLX5E_XDP_XMIT_MODE_XSK_OOO_COMP : MLX5E_XDP_XMIT_MODE_XSK;
 
         if (xsk_tx_no_comp_desc(&desc))
             xdpi.mode = MLX5E_XDP_XMIT_MODE_XSK_NO_COMP;
